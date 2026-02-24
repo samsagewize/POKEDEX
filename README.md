@@ -1,60 +1,34 @@
-# 🎴 POKEDEX - No Gemini Version
+# 🎴 POKEDEX
 
-The ultimate Pokemon card collector's app - **without any AI dependencies!**
+The ultimate Pokemon card collector's app - **no AI dependencies!**
 
 ## Features
 
-- 🔍 **Search** - Search Pokemon TCG database (free API, no key needed)
+- 🔍 **Search** - Search Pokemon TCG database (free API)
 - 📱 **Collection** - Track your cards
 - 💰 **Prices** - View card prices from TCGPlayer & CardMarket
-- 🔄 **Trade** - Trade with other collectors
-- 💬 **Chat** - Message other trainers
-- 🎨 **Customize** - Theme colors & avatars
 
-## Quick Start
+## Quick Start (Local)
 
 ```bash
-# Install
 npm install
-
-# Run
 npm run dev
 ```
 
-Open http://localhost:3000
+Open http://localhost:5173
 
-## No API Keys Needed!
+## Deploy to Vercel
 
-This version works out of the box:
-- Uses free **Pokemon TCG API** for card data
-- Uses **TCGPlayer** prices (when available)
-- Uses **CardMarket** as backup price source
-
-Optional: Add `VITE_POKEMON_TCG_API_KEY` for higher rate limits.
+1. Push to GitHub
+2. Import in Vercel
+3. Deploy!
 
 ## Tech Stack
 
-- React 19 + Vite
+- React 18 + Vite
 - Tailwind CSS
-- Express + SQLite
 - Pokemon TCG API (free)
 
-## What's Different from Original
+## API
 
-| Feature | Original | This Version |
-|---------|----------|--------------|
-| AI Chat | Gemini API | Not included |
-| Card Search | AI-powered | Pokemon TCG API |
-| Prices | AI estimates | Real market data |
-| API Keys | Gemini required | None needed! |
-
-## Deploy
-
-```bash
-npm run build
-# Deploy dist/ folder to Vercel, Netlify, etc.
-```
-
-## License
-
-MIT
+This version uses the free Pokemon TCG API - no keys needed!
