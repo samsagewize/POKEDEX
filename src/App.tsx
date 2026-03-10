@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { searchCards, getSets, type PokemonCard } from "./pokemonApi";
 import { THEME_COLORS, AVATARS, CARD_TYPES } from "./constants";
 
@@ -39,6 +39,18 @@ const TrendingUp = () => (
   </svg>
 );
 
+const X = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+  </svg>
+);
+
+const Trash = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+  </svg>
+);
+
 type View = "home" | "search" | "collection" | "trading" | "chat" | "profile";
 
 interface User {
@@ -46,6 +58,19 @@ interface User {
   username: string;
   theme_color: string;
   avatar_id: number;
+}
+
+interface CollectionCard {
+  id: number;
+  user_id: number;
+  name: string;
+  set_name: string;
+  card_number: string;
+  image_url: string;
+  type: string;
+  rarity: string;
+  price: number;
+  scanned_at: string;
 }
 
 export default function App() {
@@ -59,10 +84,31 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   
   // Collection state
-  const [collection, setCollection] = useState<any[]>([]);
+  const [collection, setCollection] = useState<CollectionCard[]>([]);
   
   // Active tab color
   const [themeColor, setThemeColor] = useState("#ef4444");
+
+  // Selected card for modal
+  const [selectedCard, setSelectedCard] = useState<CollectionCard | null>(null);
+
+  // Filter state
+  const [typeFilter, setTypeFilter] = useState("");
+  const [rarityFilter, setRarityFilter] = useState("");
+
+  // Calculate collection value
+  const collectionValue = useMemo(() => {
+    return collection.reduce((sum, card) => sum + (card.price || 0), 0);
+  }, [collection]);
+
+  // Filtered collection
+  const filteredCollection = useMemo(() => {
+    return collection.filter(card => {
+      if (typeFilter && card.type !== typeFilter) return false;
+      if (rarityFilter && card.rarity !== rarityFilter) return false;
+      return true;
+    });
+  }, [collection, typeFilter, rarityFilter]);
 
   useEffect(() => {
     // Check for stored user
@@ -71,6 +117,20 @@ export default function App() {
       setUser(JSON.parse(stored));
     }
   }, []);
+
+  // Fetch collection when user changes
+  useEffect(() => {
+    if (user) {
+      fetchCollection();
+    }
+  }, [user]);
+
+  const fetchCollection = async () => {
+    if (!user) return;
+    const res = await fetch(`/api/collection/${user.id}`);
+    const data = await res.json();
+    setCollection(data);
+  };
 
   const handleLogin = async () => {
     if (!username.trim()) return;
@@ -87,11 +147,16 @@ export default function App() {
   };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() && !typeFilter && !rarityFilter) return;
     
     setLoading(true);
     try {
-      const result = await searchCards({ query: searchQuery, pageSize: 20 });
+      const result = await searchCards({ 
+        query: searchQuery, 
+        type: typeFilter || undefined,
+        rarity: rarityFilter || undefined,
+        pageSize: 20 
+      });
       setSearchResults(result.data);
     } catch (err) {
       console.error("Search error:", err);
@@ -121,9 +186,15 @@ export default function App() {
     });
     
     // Refresh collection
-    const res = await fetch(`/api/collection/${user.id}`);
-    const data = await res.json();
-    setCollection(data);
+    fetchCollection();
+  };
+
+  const removeFromCollection = async (cardId: number) => {
+    await fetch(`/api/collection/${cardId}`, {
+      method: "DELETE",
+    });
+    fetchCollection();
+    setSelectedCard(null);
   };
 
   if (!user) {
@@ -229,6 +300,49 @@ export default function App() {
         </div>
       )}
 
+      {/* Home View - Recent Cards */}
+      {view === "home" && (
+        <div className="px-4 pb-24">
+          <h2 className="font-bold mb-3 text-yellow-400">🏠 YOUR CARDS</h2>
+          {collection.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400 mb-4">Start building your collection!</p>
+              <button 
+                onClick={() => setView("search")}
+                className="px-6 py-3 bg-yellow-400 text-black font-bold rounded-xl"
+              >
+                Search Cards
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {collection.slice(0, 12).map((card) => (
+                <div
+                  key={card.id}
+                  className="bg-gray-800 rounded-xl overflow-hidden cursor-pointer hover:ring-2 ring-yellow-400 transition"
+                  onClick={() => setSelectedCard(card)}
+                >
+                  <img src={card.image_url} alt={card.name} className="w-full" />
+                  <div className="p-2">
+                    <p className="font-bold text-sm truncate">{card.name}</p>
+                    <p className="text-xs text-gray-400">{card.set_name}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {collection.length > 12 && (
+            <button 
+              onClick={() => setView("collection")}
+              className="w-full mt-4 py-3 bg-gray-800 text-gray-400 rounded-xl"
+            >
+              View All {collection.length} Cards →
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Quick Stats */}
       <div className="px-4 py-2 grid grid-cols-3 gap-2">
         <div className="bg-gray-800 rounded-xl p-3 text-center">
@@ -236,7 +350,7 @@ export default function App() {
           <p className="text-xs text-gray-400">Cards</p>
         </div>
         <div className="bg-gray-800 rounded-xl p-3 text-center">
-          <p className="text-2xl font-bold text-green-400">$0</p>
+          <p className="text-2xl font-bold text-green-400">${collectionValue.toFixed(2)}</p>
           <p className="text-xs text-gray-400">Value</p>
         </div>
         <div className="bg-gray-800 rounded-xl p-3 text-center">
@@ -244,6 +358,112 @@ export default function App() {
           <p className="text-xs text-gray-400">Trades</p>
         </div>
       </div>
+
+      {/* Filters */}
+      {(view === "search" || view === "collection") && (
+        <div className="px-4 pb-2 flex gap-2">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="flex-1 p-2 bg-gray-800 rounded-lg text-sm border border-gray-700"
+          >
+            <option value="">All Types</option>
+            {CARD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select
+            value={rarityFilter}
+            onChange={(e) => setRarityFilter(e.target.value)}
+            className="flex-1 p-2 bg-gray-800 rounded-lg text-sm border border-gray-700"
+          >
+            <option value="">All Rarities</option>
+            <option value="Common">Common</option>
+            <option value="Uncommon">Uncommon</option>
+            <option value="Rare">Rare</option>
+            <option value="Rare Holofoil">Rare Holofoil</option>
+            <option value="Rare Ultra">Rare Ultra</option>
+            <option value="Rare Secret">Rare Secret</option>
+          </select>
+        </div>
+      )}
+
+      {/* Collection View */}
+      {view === "collection" && (
+        <div className="px-4 pb-24">
+          <h2 className="font-bold mb-3 text-yellow-400">📦 YOUR COLLECTION</h2>
+          {filteredCollection.length === 0 ? (
+            <p className="text-gray-400 text-center py-8">No cards in your collection yet. Search and add some!</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {filteredCollection.map((card) => (
+                <div
+                  key={card.id}
+                  className="bg-gray-800 rounded-xl overflow-hidden cursor-pointer hover:ring-2 ring-yellow-400 transition"
+                  onClick={() => setSelectedCard(card)}
+                >
+                  <img src={card.image_url} alt={card.name} className="w-full" />
+                  <div className="p-2">
+                    <p className="font-bold text-sm truncate">{card.name}</p>
+                    <p className="text-xs text-gray-400">{card.set_name}</p>
+                    <p className="text-xs text-yellow-400">${card.price?.toFixed(2) || '0.00'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Search Results */}
+      {view === "search" && searchResults.length > 0 && (
+        <div className="px-4 pb-24">
+          <h2 className="font-bold mb-3 text-yellow-400">🔍 SEARCH RESULTS</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {searchResults.map((card) => (
+              <div
+                key={card.id}
+                className="bg-gray-800 rounded-xl overflow-hidden cursor-pointer hover:ring-2 ring-yellow-400 transition"
+                onClick={() => addToCollection(card)}
+              >
+                <img src={card.images.small} alt={card.name} className="w-full" />
+                <div className="p-2">
+                  <p className="font-bold text-sm truncate">{card.name}</p>
+                  <p className="text-xs text-gray-400">{card.set.name}</p>
+                  <p className="text-xs text-yellow-400">#{card.number}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Card Detail Modal */}
+      {selectedCard && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setSelectedCard(null)}>
+          <div className="bg-gray-800 rounded-2xl max-w-sm w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+            <img src={selectedCard.image_url} alt={selectedCard.name} className="w-full" />
+            <div className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-xl font-bold">{selectedCard.name}</h3>
+                <button onClick={() => setSelectedCard(null)} className="text-gray-400 hover:text-white">
+                  <X />
+                </button>
+              </div>
+              <p className="text-gray-400 text-sm mb-1">{selectedCard.set_name} • #{selectedCard.card_number}</p>
+              <div className="flex gap-2 mb-4">
+                <span className="px-2 py-1 bg-gray-700 rounded text-xs">{selectedCard.type}</span>
+                <span className="px-2 py-1 bg-gray-700 rounded text-xs">{selectedCard.rarity}</span>
+              </div>
+              <p className="text-2xl font-bold text-green-400 mb-4">${selectedCard.price?.toFixed(2) || '0.00'}</p>
+              <button
+                onClick={() => removeFromCollection(selectedCard.id)}
+                className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold flex items-center justify-center gap-2"
+              >
+                <Trash /> Remove from Collection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 p-2 flex justify-around">

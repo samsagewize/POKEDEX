@@ -83,6 +83,11 @@ async function startServer() {
     res.json({ id: result.lastInsertRowid });
   });
 
+  app.delete("/api/collection/:cardId", (req, res) => {
+    db.prepare("DELETE FROM cards WHERE id = ?").run(req.params.cardId);
+    res.json({ success: true });
+  });
+
   // Vite middleware
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
