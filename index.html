@@ -30,7 +30,7 @@
 </head>
 <body class="bg-black text-white min-h-screen">
 
-  <!-- Pokédex Opening Screen -->
+  <!-- Pokédex Opening -->
   <div id="pokedexStart" class="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-900 via-black to-red-950">
     <div class="text-center">
       <div id="pokedexCase" class="pokedex-closed mx-auto w-80 h-80 bg-red-600 rounded-3xl border-8 border-yellow-400 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
@@ -53,7 +53,6 @@
   <!-- Main App -->
   <div id="mainContent" class="hidden flex flex-col h-screen">
 
-    <!-- Header -->
     <header class="flex justify-between items-center p-4 bg-black/80 backdrop-blur border-b border-yellow-400/30">
       <div class="flex items-center gap-4">
         <div id="profileAvatar" class="w-14 h-14 bg-gray-800 rounded-2xl flex items-center justify-center overflow-hidden border-4 border-yellow-400"></div>
@@ -65,18 +64,16 @@
       <button onclick="logout()" class="px-6 py-2 bg-red-600 rounded-2xl text-sm">Logout</button>
     </header>
 
-    <!-- Tabs -->
     <div class="flex gap-2 p-4 border-b border-gray-700 overflow-x-auto bg-black/50">
-      <button onclick="showTab('home')" class="tab-btn active px-6 py-3 font-medium">🏠 Home</button>
+      <button onclick="showTab('home')" class="tab-btn px-6 py-3 font-medium">🏠 Home</button>
       <button onclick="showTab('search')" class="tab-btn px-6 py-3 font-medium">🔍 Search</button>
       <button onclick="showTab('camera')" class="tab-btn px-6 py-3 font-medium">📸 Scan</button>
       <button onclick="showTab('collection')" class="tab-btn px-6 py-3 font-medium">Collection</button>
-      <button onclick="showTab('sets')" class="tab-btn px-6 py-3 font-medium">Master Sets</button>
+      <button onclick="showTab('sets')" class="tab-btn active px-6 py-3 font-medium">Master Sets</button>
       <button onclick="showTab('online')" class="tab-btn px-6 py-3 font-medium">🌐 Online</button>
       <button onclick="showTab('profile')" class="tab-btn px-6 py-3 font-medium">👤 Profile</button>
     </div>
 
-    <!-- Content Area -->
     <div class="flex-1 overflow-y-auto p-6">
 
       <!-- MASTER SETS -->
@@ -88,28 +85,29 @@
       <!-- SET DETAIL -->
       <div id="setDetailView" class="tab hidden">
         <button onclick="closeSetDetail()" class="mb-6 text-yellow-400 hover:underline flex items-center gap-2">← Back to Master Sets</button>
-        <div class="flex items-center gap-4 mb-6">
-          <img id="setSymbol" class="w-20 h-20 object-contain" alt="Set Symbol">
+        
+        <div class="flex items-center gap-4 mb-8">
+          <img id="setSymbol" class="w-24 h-24 object-contain" alt="Set Symbol">
           <div>
             <h2 id="detailSetName" class="text-3xl font-bold"></h2>
-            <p id="detailSetEra" class="text-gray-400"></p>
+            <p id="detailSetEra" class="text-gray-400 text-lg"></p>
           </div>
         </div>
+
         <div id="setCardsGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-6"></div>
       </div>
 
       <!-- Placeholder for other tabs -->
-      <div id="homeTab" class="tab hidden text-center py-20 text-gray-400">Home Feed - Coming Soon</div>
-      <div id="searchTab" class="tab hidden text-center py-20 text-gray-400">Search Page - Coming Soon</div>
-      <div id="cameraTab" class="tab hidden text-center py-20 text-gray-400">Camera Scanner - Coming Soon</div>
-      <div id="collectionTab" class="tab hidden text-center py-20 text-gray-400">My Collection - Coming Soon</div>
-      <div id="onlineTab" class="tab hidden text-center py-20 text-gray-400">Online Trainers - Coming Soon</div>
-      <div id="profileTab" class="tab hidden text-center py-20 text-gray-400">Profile Page - Coming Soon</div>
+      <div id="homeTab" class="tab hidden text-center py-20 text-gray-400">🏠 Home Feed - Coming Next</div>
+      <div id="searchTab" class="tab hidden text-center py-20 text-gray-400">🔍 Search - Coming Next</div>
+      <div id="cameraTab" class="tab hidden text-center py-20 text-gray-400">📸 Camera Scanner - Coming Next</div>
+      <div id="collectionTab" class="tab hidden text-center py-20 text-gray-400">Collection - Coming Next</div>
+      <div id="onlineTab" class="tab hidden text-center py-20 text-gray-400">🌐 Online - Coming Next</div>
+      <div id="profileTab" class="tab hidden text-center py-20 text-gray-400">👤 Profile - Coming Next</div>
     </div>
   </div>
 
   <script>
-    // Real sets with official symbols from Pokémon TCG
     const allSets = [
       {id: "sv1", name: "Scarlet & Violet", era: "SV", symbol: "https://images.pokemontcg.io/sv1/symbol.png", total: 198},
       {id: "sv2", name: "Paldea Evolved", era: "SV", symbol: "https://images.pokemontcg.io/sv2/symbol.png", total: 193},
@@ -118,6 +116,9 @@
       {id: "swsh7", name: "Evolving Skies", era: "SWSH", symbol: "https://images.pokemontcg.io/swsh7/symbol.png", total: 237},
       {id: "base1", name: "Base Set", era: "Original", symbol: "https://images.pokemontcg.io/base1/symbol.png", total: 102}
     ];
+
+    let myCards = JSON.parse(localStorage.getItem('myPokemonCards') || '[]');
+    let currentViewingSet = null;
 
     function openPokedex() {
       document.getElementById('pokedexCase').classList.add('scale-110');
@@ -155,6 +156,7 @@
     }
 
     async function showSetDetail(set) {
+      currentViewingSet = set;
       document.getElementById('setsTab').classList.add('hidden');
       const detail = document.getElementById('setDetailView');
       detail.classList.remove('hidden');
@@ -165,7 +167,7 @@
       document.getElementById('detailSetEra').textContent = `${set.era} — ${set.total} cards`;
 
       const grid = document.getElementById('setCardsGrid');
-      grid.innerHTML = '<p class="col-span-full text-center py-12">Loading cards from the set...</p>';
+      grid.innerHTML = '<p class="col-span-full text-center py-12">Loading cards...</p>';
 
       try {
         const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${set.id}&pageSize=60`);
@@ -173,19 +175,36 @@
 
         grid.innerHTML = '';
         data.data.forEach(card => {
+          const isOwned = myCards.some(c => c.name === card.name);
           const div = document.createElement('div');
           div.className = 'bg-gray-900 rounded-3xl p-4 text-center';
           div.innerHTML = `
             <img src="${set.symbol}" class="w-12 h-12 mx-auto mb-3 opacity-70">
             <img src="${card.images.small}" class="w-full rounded-xl mb-3" style="max-height:160px">
-            <p class="font-medium text-sm">${card.name}</p>
-            <button onclick="alert('Scan this card coming soon!')" class="mt-4 text-xs bg-yellow-400 text-black px-6 py-2 rounded-2xl w-full">Scan / Add Card</button>
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${Math.floor(Math.random()*151)+1}.png" 
+                 class="pokemon-sprite mx-auto ${isOwned ? '' : 'grayscale'}">
+            <p class="font-medium mt-2">${card.name}</p>
+            ${isOwned ? 
+              `<p class="text-green-400 text-xs mt-2">✓ Verified • Owned</p>` : 
+              `<button onclick="addCard('${card.name}', '${card.images.large}'); event.stopImmediatePropagation()" 
+                class="mt-4 text-xs bg-yellow-400 text-black px-6 py-2 rounded-2xl w-full">Scan / Add Card</button>`}
           `;
           grid.appendChild(div);
         });
       } catch(e) {
-        grid.innerHTML = '<p class="col-span-full text-red-400 text-center py-12">Could not load cards at the moment.</p>';
+        grid.innerHTML = '<p class="col-span-full text-red-400 text-center py-12">Could not load cards right now.</p>';
       }
+    }
+
+    function addCard(name, cardImage) {
+      if (myCards.some(c => c.name === name)) {
+        alert("You already own this card!");
+        return;
+      }
+      myCards.push({ id: Date.now().toString(), name: name, cardImage: cardImage });
+      localStorage.setItem('myPokemonCards', JSON.stringify(myCards));
+      alert(`✅ ${name} added to your collection!`);
+      if (currentViewingSet) showSetDetail(currentViewingSet);
     }
 
     function closeSetDetail() {
@@ -194,7 +213,7 @@
     }
 
     function logout() {
-      if (confirm("Close the Pokédex?")) location.reload();
+      if (confirm("Close Pokédex?")) location.reload();
     }
 
     // Initialize
