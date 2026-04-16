@@ -1,3 +1,5 @@
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
