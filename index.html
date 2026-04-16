@@ -1,14 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🎴 POKEDEX - Ultimate Card Collector's App</title>
-    <meta name="description" content="Track, trade, and showcase your Pokemon card collection" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎴</text></svg>" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PokeData • Pokédex</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .pokedex-closed { transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+    
+    .pokemon-sprite { width: 90px; height: 90px; object-fit: contain; }
+    .grayscale { filter: grayscale(100%) brightness(0.75); }
+    .set-badge { transition: all 0.3s; cursor: pointer; }
+    .set-badge:hover { transform: scale(1.05); }
+    .set-badge.mastered { background-color: #facc15; color: black; box-shadow: 0 0 25px #facc15; }
+
+    .tab {
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity: 0;
+      transform: rotateY(-25deg) translateX(60px);
+      display: none;
+    }
+    .tab.active {
+      display: block;
+      opacity: 1;
+      transform: rotateY(0deg) translateX(0);
+    }
+  </style>
+</head>
+<body class="bg-black text-white min-h-screen">
+
+  <!-- Opening Screen -->
+  <div id="pokedexStart" class="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-900 via-black to-red-950">
+    <div class="text-center">
+      <div id="pokedexCase" class="pokedex-closed mx-auto w-80 h-80 bg-red-600 rounded-3xl border-8 border-yellow-400 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
+        <div class="absolute top-6 w-40 h-8 bg-black rounded-full"></div>
+        <div class="mt-16 w-52 h-52 bg-black rounded-2xl border-4 border-yellow-300 flex items-center justify-center">
+          <div class="text-center">
+            <div class="text-6xl mb-4">📟</div>
+            <p class="text-yellow-300 font-mono text-xl tracking-widest">POKÉDEX</p>
+          </div>
+        </div>
+        <div class="absolute bottom-8 flex gap-6">
+          <div class="w-6 h-6 bg-green-400 rounded-full shadow-lg shadow-green-400 animate-pulse"></div>
+          <div class="w-6 h-6 bg-yellow-400 rounded-full shadow-lg shadow-yellow-400"></div>
+        </div>
+      </div>
+      <button onclick="openPokedex()" class="mt-12 px-12 py-5 bg-yellow-400 text-black font-bold text-2xl rounded-3xl hover:bg-yellow-300">OPEN POKÉDEX</button>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="mainContent" class="hidden flex flex-col h-screen">
+
+    <!-- Header -->
+    <header class="flex justify-between items-center p-4 bg-black/80 backdrop-blur border-b border-yellow-400/30">
+      <div class="flex items-center gap-4">
+        <div id="profileAvatar" class="w-14 h-14 bg-gray-800 rounded-2xl flex items-center justify-center overflow-hidden border-4 border-yellow-400"></div>
+        <div>
+          <h1 id="trainerNameHeader" class="text-3xl font-bold text-yellow-400">Trainer</h1>
+          <p id="welcomeText" class="text-sm text-gray-400">Welcome back!</p>
+        </div>
+      </div>
+      <button onclick="logout()" class="px-6 py-2 bg-red-600 rounded-2xl text-sm">Logout</button>
+    </header>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 p-4 border-b border-gray-700 overflow-x-auto bg-black/50">
+      <button onclick="showTab('home')" class="tab-btn active px-6 py-3 font-medium">🏠 Home</button>
+      <button onclick="showTab('search')" class="tab-btn px-6 py-3 font-medium">🔍 Search</button>
+      <button onclick="showTab('camera')" class="tab-btn px-6 py-3 font-medium">📸 Scan</button>
+      <button onclick="showTab('collection')" class="tab-btn px-6 py-3 font-medium">Collection</button>
+      <button onclick="showTab('sets')" class="tab-btn px-6 py-3 font-medium">Master Sets</button>
+      <button onclick="showTab('online')" class="tab-btn px-6 py-3 font-medium">🌐 Online</button>
+      <button onclick="showTab('profile')" class="tab-btn px-6 py-3 font-medium">👤 Profile</button>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-6">
+
+      <!-- MASTER SETS -->
+      <div id="setsTab" class="tab active">
+        <h2 class="text-3xl font-bold mb-6">Master Sets 🏆</h2>
+        <div id="setsContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+      </div>
+
+      <!-- SET DETAIL -->
+      <div id="setDetailView" class="tab hidden">
+        <button onclick="closeSetDetail()" class="mb-6 text-yellow-400 hover:underline">← Back to Master Sets</button>
+        <div class="flex items-center gap-4 mb-6">
+          <img id="setSymbol" class="w-20 h-20 object-contain" alt="Set Symbol">
+          <div>
+            <h2 id="detailSetName" class="text-3xl font-bold"></h2>
+            <p id="detailSetEra" class="text-gray-400"></p>
+          </div>
+        </div>
+        <div id="setCardsGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-6"></div>
+      </div>
+
+      <!-- HOME, SEARCH, CAMERA, COLLECTION, ONLINE, PROFILE tabs are hidden for now but ready -->
+      <div id="homeTab" class="tab hidden">Home Feed Coming Soon</div>
+      <div id="searchTab" class="tab hidden">Search Coming Soon</div>
+      <div id="cameraTab" class="tab hidden">Camera Coming Soon</div>
+      <div id="collectionTab" class="tab hidden">Collection Coming Soon</div>
+      <div id="onlineTab" class="tab hidden">Online Coming Soon</div>
+      <div id="profileTab" class="tab hidden">Profile Coming Soon</div>
+    </div>
+  </div>
+
+  <script>
+    const allSets = [
+      {id: "sv1", name: "Scarlet & Violet", era: "SV", symbol: "https://images.pokemontcg.io/sv1/symbol.png", total: 198},
+      {id: "sv2", name: "Paldea Evolved", era: "SV", symbol: "https://images.pokemontcg.io/sv2/symbol.png", total: 193},
+      {id: "sv3", name: "Obsidian Flames", era: "SV", symbol: "https://images.pokemontcg.io/sv3/symbol.png", total: 197},
+      {id: "sv3pt5", name: "Scarlet & Violet 151", era: "SV", symbol: "https://images.pokemontcg.io/sv3pt5/symbol.png", total: 165},
+      {id: "swsh7", name: "Evolving Skies", era: "SWSH", symbol: "https://images.pokemontcg.io/swsh7/symbol.png", total: 237},
+      {id: "base1", name: "Base Set", era: "Original", symbol: "https://images.pokemontcg.io/base1/symbol.png", total: 102}
+    ];
+
+    function openPokedex() {
+      document.getElementById('pokedexCase').classList.add('scale-110');
+      setTimeout(() => {
+        document.getElementById('pokedexStart').classList.add('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+        showTab('sets');
+      }, 600);
+    }
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      const tab = document.getElementById(tabName + 'Tab');
+      if (tab) tab.classList.add('active');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active', 'text-yellow-400'));
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabName));
+      if (activeBtn) activeBtn.classList.add('active', 'text-yellow-400');
+    }
+
+    function renderMasterSets() {
+      const container = document.getElementById('setsContainer');
+      container.innerHTML = '';
+      allSets.forEach(set => {
+        const div = document.createElement('div');
+        div.className = `set-badge p-6 bg-gray-900 rounded-3xl text-center flex flex-col items-center`;
+        div.innerHTML = `
+          <img src="${set.symbol}" class="w-20 h-20 object-contain mb-4" alt="${set.name}">
+          <p class="font-bold">${set.name}</p>
+          <p class="text-xs text-gray-400">${set.era} • ${set.total} cards</p>
+        `;
+        div.onclick = () => showSetDetail(set);
+        container.appendChild(div);
+      });
+    }
+
+    async function showSetDetail(set) {
+      document.getElementById('setsTab').classList.add('hidden');
+      const detail = document.getElementById('setDetailView');
+      detail.classList.remove('hidden');
+      detail.classList.add('active');
+
+      document.getElementById('setSymbol').src = set.symbol;
+      document.getElementById('detailSetName').textContent = set.name;
+      document.getElementById('detailSetEra').textContent = `${set.era} — ${set.total} cards`;
+
+      const grid = document.getElementById('setCardsGrid');
+      grid.innerHTML = '<p class="col-span-full text-center py-12">Loading cards...</p>';
+
+      try {
+        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${set.id}&pageSize=60`);
+        const data = await res.json();
+
+        grid.innerHTML = '';
+        data.data.forEach(card => {
+          const div = document.createElement('div');
+          div.className = 'bg-gray-900 rounded-3xl p-4 text-center';
+          div.innerHTML = `
+            <img src="${set.symbol}" class="w-12 h-12 mx-auto mb-3 opacity-70">
+            <img src="${card.images.small}" class="w-full rounded-xl mb-3" style="max-height:160px">
+            <p class="font-medium">${card.name}</p>
+            <button onclick="alert('Scan feature coming soon!')" class="mt-4 text-xs bg-yellow-400 text-black px-6 py-2 rounded-2xl w-full">Scan / Add</button>
+          `;
+          grid.appendChild(div);
+        });
+      } catch(e) {
+        grid.innerHTML = '<p class="col-span-full text-red-400">Failed to load cards.</p>';
+      }
+    }
+
+    function closeSetDetail() {
+      document.getElementById('setDetailView').classList.add('hidden');
+      document.getElementById('setsTab').classList.remove('hidden');
+    }
+
+    function logout() {
+      if (confirm("Close Pokédex?")) location.reload();
+    }
+
+    window.onload = () => {
+      renderMasterSets();
+    };
+  </script>
+</body>
 </html>
