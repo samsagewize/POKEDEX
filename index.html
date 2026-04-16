@@ -9,7 +9,7 @@
     body { font-family: system-ui, sans-serif; }
     .pokedex-closed { transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
     
-    .pokemon-sprite { width: 90px; height: 90px; object-fit: contain; }
+    .pokemon-sprite { width: 90px; height: 90px; object-fit: contain; transition: all 0.3s; }
     .grayscale { filter: grayscale(100%) brightness(0.75); }
     .set-badge { transition: all 0.3s; cursor: pointer; }
     .set-badge:hover { transform: scale(1.05); }
@@ -30,7 +30,7 @@
 </head>
 <body class="bg-black text-white min-h-screen">
 
-  <!-- Opening Screen -->
+  <!-- Pokédex Opening Screen -->
   <div id="pokedexStart" class="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-900 via-black to-red-950">
     <div class="text-center">
       <div id="pokedexCase" class="pokedex-closed mx-auto w-80 h-80 bg-red-600 rounded-3xl border-8 border-yellow-400 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
@@ -76,7 +76,7 @@
       <button onclick="showTab('profile')" class="tab-btn px-6 py-3 font-medium">👤 Profile</button>
     </div>
 
-    <!-- Content -->
+    <!-- Content Area -->
     <div class="flex-1 overflow-y-auto p-6">
 
       <!-- MASTER SETS -->
@@ -87,7 +87,7 @@
 
       <!-- SET DETAIL -->
       <div id="setDetailView" class="tab hidden">
-        <button onclick="closeSetDetail()" class="mb-6 text-yellow-400 hover:underline">← Back to Master Sets</button>
+        <button onclick="closeSetDetail()" class="mb-6 text-yellow-400 hover:underline flex items-center gap-2">← Back to Master Sets</button>
         <div class="flex items-center gap-4 mb-6">
           <img id="setSymbol" class="w-20 h-20 object-contain" alt="Set Symbol">
           <div>
@@ -98,17 +98,18 @@
         <div id="setCardsGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-6"></div>
       </div>
 
-      <!-- HOME, SEARCH, CAMERA, COLLECTION, ONLINE, PROFILE tabs are hidden for now but ready -->
-      <div id="homeTab" class="tab hidden">Home Feed Coming Soon</div>
-      <div id="searchTab" class="tab hidden">Search Coming Soon</div>
-      <div id="cameraTab" class="tab hidden">Camera Coming Soon</div>
-      <div id="collectionTab" class="tab hidden">Collection Coming Soon</div>
-      <div id="onlineTab" class="tab hidden">Online Coming Soon</div>
-      <div id="profileTab" class="tab hidden">Profile Coming Soon</div>
+      <!-- Placeholder for other tabs -->
+      <div id="homeTab" class="tab hidden text-center py-20 text-gray-400">Home Feed - Coming Soon</div>
+      <div id="searchTab" class="tab hidden text-center py-20 text-gray-400">Search Page - Coming Soon</div>
+      <div id="cameraTab" class="tab hidden text-center py-20 text-gray-400">Camera Scanner - Coming Soon</div>
+      <div id="collectionTab" class="tab hidden text-center py-20 text-gray-400">My Collection - Coming Soon</div>
+      <div id="onlineTab" class="tab hidden text-center py-20 text-gray-400">Online Trainers - Coming Soon</div>
+      <div id="profileTab" class="tab hidden text-center py-20 text-gray-400">Profile Page - Coming Soon</div>
     </div>
   </div>
 
   <script>
+    // Real sets with official symbols from Pokémon TCG
     const allSets = [
       {id: "sv1", name: "Scarlet & Violet", era: "SV", symbol: "https://images.pokemontcg.io/sv1/symbol.png", total: 198},
       {id: "sv2", name: "Paldea Evolved", era: "SV", symbol: "https://images.pokemontcg.io/sv2/symbol.png", total: 193},
@@ -164,7 +165,7 @@
       document.getElementById('detailSetEra').textContent = `${set.era} — ${set.total} cards`;
 
       const grid = document.getElementById('setCardsGrid');
-      grid.innerHTML = '<p class="col-span-full text-center py-12">Loading cards...</p>';
+      grid.innerHTML = '<p class="col-span-full text-center py-12">Loading cards from the set...</p>';
 
       try {
         const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${set.id}&pageSize=60`);
@@ -177,13 +178,13 @@
           div.innerHTML = `
             <img src="${set.symbol}" class="w-12 h-12 mx-auto mb-3 opacity-70">
             <img src="${card.images.small}" class="w-full rounded-xl mb-3" style="max-height:160px">
-            <p class="font-medium">${card.name}</p>
-            <button onclick="alert('Scan feature coming soon!')" class="mt-4 text-xs bg-yellow-400 text-black px-6 py-2 rounded-2xl w-full">Scan / Add</button>
+            <p class="font-medium text-sm">${card.name}</p>
+            <button onclick="alert('Scan this card coming soon!')" class="mt-4 text-xs bg-yellow-400 text-black px-6 py-2 rounded-2xl w-full">Scan / Add Card</button>
           `;
           grid.appendChild(div);
         });
       } catch(e) {
-        grid.innerHTML = '<p class="col-span-full text-red-400">Failed to load cards.</p>';
+        grid.innerHTML = '<p class="col-span-full text-red-400 text-center py-12">Could not load cards at the moment.</p>';
       }
     }
 
@@ -193,9 +194,10 @@
     }
 
     function logout() {
-      if (confirm("Close Pokédex?")) location.reload();
+      if (confirm("Close the Pokédex?")) location.reload();
     }
 
+    // Initialize
     window.onload = () => {
       renderMasterSets();
     };
